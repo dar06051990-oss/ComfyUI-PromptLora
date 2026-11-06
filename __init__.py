@@ -129,7 +129,7 @@ async def smart_prompt_lora_list(request):
     try:
         filenames = folder_paths.get_filename_list("loras")
     except Exception as exc:
-        return web.json_response({"error": f"Ошибка: {exc}"}, status=500)
+        return web.json_response({"error": f"Error: {exc}"}, status=500)
 
     for filename in sorted(filenames, key=str.lower):
         if not filename.lower().endswith(".safetensors"): continue
@@ -231,23 +231,23 @@ class PromptLoraNode:
 
             lora_file = _resolve_lora_path(filename)
             if not lora_file:
-                LOGGER.warning(f"[PromptLora] LoRA не найдена по имени: {filename}")
+                LOGGER.warning(f"[PromptLora] LoRA not found: {filename}")
                 continue
 
             try:
                 lora = comfy.utils.load_torch_file(lora_file, safe_load=True)
                 result_model, result_clip = comfy.sd.load_lora_for_models(result_model, result_clip, lora, model_weight, clip_weight)
-                LOGGER.info(f"[PromptLora] Применена LoRA: {filename} (M:{model_weight}, C:{clip_weight})")
+                LOGGER.info(f"[PromptLora] Applied LoRA: {filename} (M:{model_weight}, C:{clip_weight})")
             except Exception as exc:
-                LOGGER.error(f"[PromptLora] Ошибка применения '{filename}': {exc}")
+                LOGGER.error(f"[PromptLora] Failed to apply '{filename}': {exc}")
 
-        LOGGER.info(f"[PromptLora] Итоговый промпт (без тегов): {clean_prompt}")
+        LOGGER.info(f"[PromptLora] Final prompt (without LoRA tags): {clean_prompt}")
         tokens = result_clip.tokenize(clean_prompt)
         conditioning = result_clip.encode_from_tokens_scheduled(tokens)
 
         return (result_model, conditioning)
 
-# ОБНОВЛЕННЫЕ МАППИНГИ
+# Keep node identifiers stable for existing workflows.
 NODE_CLASS_MAPPINGS = {"PromptLora": PromptLoraNode}
 NODE_DISPLAY_NAME_MAPPINGS = {"PromptLora": "PromptLora"}
 WEB_DIRECTORY = "./web"

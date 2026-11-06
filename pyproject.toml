@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-promptlora"
-version = "0.2.0"
+version = "1.0.0"
 description = "Prompt editor and visual LoRA manager for ComfyUI"
 requires-python = ">=3.9"
 dependencies = []

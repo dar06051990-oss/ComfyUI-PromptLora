@@ -4,7 +4,9 @@ version = "1.0.0"
 description = "Prompt editor and visual LoRA manager for ComfyUI"
 requires-python = ">=3.9"
 dependencies = []
+license = "MIT"
 
 [tool.comfy]
-PublisherId = "local"
+PublisherId = "dar06051990-oss"
 DisplayName = "ComfyUI-PromptLora"
+

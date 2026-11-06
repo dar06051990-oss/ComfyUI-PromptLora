@@ -243,9 +243,8 @@ function openInfoModal(lora, node, onSaveCb) {
 
     if (meta["civitai_description"]) {
         const descBox = makeElement("div", { fontSize: "12px", color: "#ccc", background: "#1a1a1a", padding: "10px", borderRadius: "4px", maxHeight: "120px", overflowY: "auto", border: "1px solid #333" });
-        const tmp = document.createElement("div");
-        tmp.innerHTML = meta["civitai_description"];
-        descBox.textContent = tmp.textContent || tmp.innerText || "";
+        // Render third-party metadata as text, never as executable HTML.
+        descBox.textContent = String(meta["civitai_description"]).replace(/<[^>]*>/g, " ").trim();
         infoDiv.appendChild(makeElement("div", { fontSize: "13px", fontWeight: "bold", color: "#ccc", marginBottom: "4px" }, "Description"));
         infoDiv.appendChild(descBox);
     }
@@ -333,9 +332,10 @@ function openInfoModal(lora, node, onSaveCb) {
                 display: "inline-flex", alignItems: "center", gap: "4px",
                 cursor: "pointer", userSelect: "none", transition: "outline 0.1s, opacity 0.1s"
             });
-            tagEl.innerHTML = `${item.tag} <b style="font-size:10px;opacity:0.8">${item.count}</b>`;
+            tagEl.appendChild(document.createTextNode(String(item.tag)));
+            tagEl.appendChild(makeElement("b", { fontSize: "10px", opacity: "0.8" }, String(item.count)));
             tagEl.dataset.tag = item.tag;
-            tagEl.title = "Кликните, чтобы добавить/удалить из Activation Text";
+            tagEl.title = "Click to add/remove from Activation Text";
 
             tagEl.onclick = () => {
                 let text = actTextInput.value;
@@ -416,7 +416,7 @@ function openInfoModal(lora, node, onSaveCb) {
             overlay.remove();
             if (onSaveCb) onSaveCb();
         } catch (e) {
-            alert("Ошибка сохранения: " + e.message);
+            alert("Save error: " + e.message);
             saveBtn.textContent = "Save";
         }
     };
@@ -456,7 +456,7 @@ function openManager(node) {
         padding: "10px 15px", borderBottom: "1px solid #444",
         flexWrap: "wrap", cursor: "grab", background: "#333",
     });
-    // ИЗМЕНЕНО НАЗВАНИЕ ЗДЕСЬ
+    // Keep the manager name distinct from the node type for existing workflows.
     const heading = makeElement("strong", { fontSize: "16px", marginRight: "auto", pointerEvents: "none", color: "#ddd" }, "PromptLora Manager");
 
     const search = makeElement("input", { width: "200px", padding: "6px 10px", color: "#eee", background: "#222", border: "1px solid #555", borderRadius: "4px", fontSize: "13px" });
@@ -496,7 +496,7 @@ function openManager(node) {
     const body = makeElement("div", { display: "flex", flex: "1", overflow: "hidden" });
     const sidebar = makeElement("div", { width: "200px", background: "#222", borderRight: "1px solid #444", overflowY: "auto", display: "flex", flexDirection: "column", padding: "10px 0" });
     const rightPanel = makeElement("div", { flex: "1", display: "flex", flexDirection: "column", overflow: "hidden" });
-    const status = makeElement("div", { padding: "10px 15px", color: "#aaa", fontSize: "12px", borderBottom: "1px solid #444" }, "Загрузка...");
+    const status = makeElement("div", { padding: "10px 15px", color: "#aaa", fontSize: "12px", borderBottom: "1px solid #444" }, "Loading...");
     rightPanel.appendChild(status);
 
     const grid = makeElement("div", { padding: "15px", display: "grid", overflowY: "auto", alignContent: "start", flex: "1", alignItems: "start", gridAutoRows: "max-content" });
@@ -631,10 +631,10 @@ function openManager(node) {
         });
         visible = sortItems(visible);
 
-        status.textContent = `${visible.length} из ${loras.length} LoRA.`;
+        status.textContent = `${visible.length} of ${loras.length} LoRAs.`;
 
         if (!visible.length) { 
-            grid.appendChild(makeElement("div", { color: "#aaa", padding: "20px" }, "Ничего не найдено.")); 
+            grid.appendChild(makeElement("div", { color: "#aaa", padding: "20px" }, "No LoRAs found.")); 
             return; 
         }
 
@@ -728,7 +728,7 @@ function openManager(node) {
                 image.src = lora.preview_url; image.loading = "lazy"; image.onerror = () => image.remove();
                 imgWrapper.appendChild(image);
             } else {
-                imgWrapper.appendChild(makeElement("div", { width: "100%", height: "100%", display: "grid", placeItems: "center", color: "#737982", fontSize: "12px" }, "Нет превью"));
+                imgWrapper.appendChild(makeElement("div", { width: "100%", height: "100%", display: "grid", placeItems: "center", color: "#737982", fontSize: "12px" }, "No preview"));
             }
 
             const star = makeElement("div", {
@@ -766,7 +766,7 @@ function openManager(node) {
                 infoBox.appendChild(makeElement("div", { fontSize: "10px", color: "#8aa", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }, `📁 ${lora.category}`));
             }
 
-            const weightRow = makeElement("div", { display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#bbb", marginTop: "4px" }, "Вес");
+            const weightRow = makeElement("div", { display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#bbb", marginTop: "4px" }, "Weight");
             const weight = makeElement("input", { width: "50px", padding: "2px 4px", color: "#eee", background: "#111", border: "1px solid #555", borderRadius: "3px", textAlign: "center" });
             weight.type = "number"; weight.step = "0.05"; weight.min = "-2"; weight.max = "2";
             
@@ -800,14 +800,14 @@ function openManager(node) {
     }
 
     async function loadLoras() {
-        if (loading) return; loading = true; status.style.color = "#aaa"; status.textContent = "Загрузка...";
+        if (loading) return; loading = true; status.style.color = "#aaa"; status.textContent = "Loading...";
         try {
             loras = await fetchLoras(); 
             node._spl_loras = loras;
             renderSidebar(); 
             render();
         } catch (error) {
-            status.textContent = `Ошибка: ${error.message}`; status.style.color = "#ff8888";
+            status.textContent = `Error: ${error.message}`; status.style.color = "#ff8888";
         } finally { loading = false; }
     }
 
@@ -860,7 +860,7 @@ app.registerExtension({
                 };
             }
 
-            this.addWidget("button", "Открыть LoRA Manager", null, () => openManager(this));
+            this.addWidget("button", "Open LoRA Manager", null, () => openManager(this));
             
             const btnIndex = this.widgets.findIndex(w => w.type === "button");
             
